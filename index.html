@@ -98,6 +98,21 @@
     </style>
 </head>
 <body class="bg-gray-900 text-white font-sans flex items-center justify-center h-screen p-4 overflow-hidden">
+    
+    <!-- Netlify Bot-Only Form -->
+    <!-- This is a hidden version of the form for Netlify to detect during deployment. -->
+    <form name="maintenance-request" data-netlify="true" netlify-honeypot="bot-field" hidden>
+        <input type="hidden" name="form-name" value="maintenance-request" />
+        <p class="hidden">
+            <label>Don’t fill this out if you’re human: <input name="bot-field" /></label>
+        </p>
+        <input type="checkbox" name="area" />
+        <textarea name="description"></textarea>
+        <input type="checkbox" name="urgent" />
+        <input type="file" name="photos" />
+    </form>
+    <!-- End of Netlify Bot-Only Form -->
+
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js"></script>
 
@@ -372,3 +387,4 @@
     </script>
 </body>
 </html>
+
