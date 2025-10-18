@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maintenance Dashboard</title>
+    <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-image: linear-gradient(to bottom, rgba(17, 24, 39, 0.6), rgba(17, 24, 39, 0.3)), url('/images/dashboard.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            font-family: 'Inter', sans-serif;
+        }
+        .nav-card {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid transparent;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+        .nav-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2), 0 0 20px rgba(59, 130, 246, 0.4);
+            border-color: rgba(96, 165, 250, 0.5);
+        }
+        .pm-card {
+            background: rgba(255, 255, 255, 0.95);
+        }
+        .fade-in-up {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        .fade-in-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="bg-gray-800 text-gray-800">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 min-h-screen flex flex-col">
+        <header class="text-center mb-8 relative fade-in-up bg-white/10 backdrop-blur-sm rounded-xl p-4 sm:p-6">
+             <!-- Desktop Back Button -->
+             <a href="index.html" class="hidden sm:flex absolute top-6 left-6 bg-white/80 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-white transition duration-300 items-center gap-2 shadow-md">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+                <span>Home</span>
+            </a>
+
+            <img src="/images/mmf-logo2.png" alt="MMF Logo" class="h-16 mx-auto mb-4 mt-10 sm:mt-0">
+            <h1 class="text-3xl sm:text-4xl font-bold text-white text-shadow-lg">Maintenance Portal Dashboard</h1>
+            <p class="text-gray-300 mt-2">Your central hub for all maintenance operations.</p>
+            
+            <!-- Mobile Back Button -->
+            <div class="mt-6 sm:hidden">
+                <a href="index.html" class="inline-flex bg-white/80 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-white transition duration-300 items-center gap-2 shadow-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+                    <span>Home</span>
+                </a>
+            </div>
+        </header>
+
+        <!-- Preventative Maintenance Tracker -->
+        <section class="pm-card shadow-2xl rounded-xl p-6 mb-8 fade-in-up" style="transition-delay: 100ms;">
+            <h2 class="text-2xl font-bold text-gray-800 border-b pb-4 mb-4">Preventative Maintenance Schedule</h2>
+            <div id="pm-tracker" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div id="pm-due" class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg">
+                    <h3 class="font-bold text-red-800">Due</h3>
+                    <ul class="mt-2 space-y-2 text-sm"></ul>
+                </div>
+                <div id="pm-due-soon" class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg">
+                    <h3 class="font-bold text-yellow-800">Due Soon</h3>
+                    <ul class="mt-2 space-y-2 text-sm"></ul>
+                </div>
+                <div id="pm-upcoming" class="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg">
+                    <h3 class="font-bold text-green-800">Upcoming</h3>
+                    <ul class="mt-2 space-y-2 text-sm"></ul>
+                </div>
+            </div>
+             <div id="pm-loading-spinner" class="text-center py-8">
+                <svg class="animate-spin h-6 w-6 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            </div>
+        </section>
+
+        <!-- Navigation Cards -->
+        <main class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            <a href="requests.html" class="nav-card shadow-lg rounded-lg p-8 text-center flex flex-col items-center justify-center fade-in-up" style="transition-delay: 200ms;">
+                <h3 class="text-2xl font-bold text-blue-600">Maintenance Requests</h3>
+                <p class="text-gray-600 mt-2">View, update, and manage all active and completed maintenance tickets.</p>
+            </a>
+
+            <a href="inventory.html" class="nav-card shadow-lg rounded-lg p-8 text-center flex flex-col items-center justify-center fade-in-up" style="transition-delay: 300ms;">
+                <h3 class="text-2xl font-bold text-indigo-600">Inventory</h3>
+                <p class="text-gray-600 mt-2">Track parts, manage stock levels, and reorder supplies.</p>
+            </a>
+
+            <a href="documents.html" class="nav-card shadow-lg rounded-lg p-8 text-center flex flex-col items-center justify-center fade-in-up" style="transition-delay: 400ms;">
+                <h3 class="text-2xl font-bold text-green-600">Documents</h3>
+                <p class="text-gray-600 mt-2">Access and download QF forms, build instructions, and other PDFs.</p>
+            </a>
+        </main>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Page Load Animation ---
+            const animatedElements = document.querySelectorAll('.fade-in-up');
+            animatedElements.forEach(el => {
+                setTimeout(() => el.classList.add('visible'), 10);
+            });
+            
+            // --- Firebase and PM Schedule Logic ---
+             const firebaseConfig = {
+              apiKey: "AIzaSyAPBdGRepb9XLyysEoKDFqFOOeKaSLe0Dw",
+              authDomain: "mmf-maintenance-portal.firebaseapp.com",
+              projectId: "mmf-maintenance-portal",
+              storageBucket: "mmf-maintenance-portal.firebasestorage.app",
+              messagingSenderId: "238077064193",
+              appId: "1:238077064193:web:b9c3784590693ba8e3fc00",
+              measurementId: "G-MBLLE9N93W"
+            };
+
+            let db;
+            let pmUnsubscribe;
+            
+            const pmTracker = document.getElementById('pm-tracker');
+            const pmLoadingSpinner = document.getElementById('pm-loading-spinner');
+            const pmDueContainer = document.querySelector('#pm-due ul');
+            const pmDueSoonContainer = document.querySelector('#pm-due-soon ul');
+            const pmUpcomingContainer = document.querySelector('#pm-upcoming ul');
+            
+            if (firebaseConfig.apiKey !== "YOUR_API_KEY" && typeof firebase !== 'undefined') {
+                try {
+                    firebase.initializeApp(firebaseConfig);
+                    db = firebase.firestore();
+                    seedInitialDataAndListen();
+                } catch (e) { console.error("Firebase initialization failed:", e); }
+            } else {
+                console.warn("Firebase config is not set. Real-time features will be disabled.");
+                pmLoadingSpinner.classList.add('hidden');
+            }
+
+            async function seedInitialDataAndListen() {
+                const pmCollectionRef = db.collection('pmSchedule');
+                const snapshot = await pmCollectionRef.limit(1).get();
+
+                if (snapshot.empty) {
+                    console.log("PM Schedule is empty. Seeding initial data...");
+                    const initialSchedule = [
+                        { name: 'Weekly Line & Area Inspection', frequency: 'weekly', lastCompleted: '2025-10-17' },
+                        { name: 'Quarterly Line-Area Check', frequency: 'quarterly', lastCompleted: '2025-10-01' },
+                        { name: 'Monthly Forklift Inspection', frequency: 'monthly', lastCompleted: '2025-09-25' },
+                        { name: 'Annual Fire Extinguisher Service', frequency: 'yearly', lastCompleted: '2025-01-15' }
+                    ];
+                    const batch = db.batch();
+                    initialSchedule.forEach(task => {
+                        const docRef = pmCollectionRef.doc(); // Automatically generate ID
+                        batch.set(docRef, task);
+                    });
+                    await batch.commit();
+                }
+                listenForPMSchedule();
+            }
+
+            function listenForPMSchedule() {
+                if (pmUnsubscribe) pmUnsubscribe();
+
+                pmUnsubscribe = db.collection('pmSchedule').onSnapshot(snapshot => {
+                    pmLoadingSpinner.classList.add('hidden');
+                    pmTracker.classList.remove('hidden');
+
+                    const schedule = [];
+                    snapshot.forEach(doc => {
+                        schedule.push({ id: doc.id, ...doc.data() });
+                    });
+                    renderPMSchedule(schedule);
+                }, err => {
+                    console.error("Error fetching PM schedule: ", err);
+                    pmLoadingSpinner.classList.add('hidden');
+                });
+            }
+
+            function renderPMSchedule(pmSchedule) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                const scheduleWithDueDates = pmSchedule.map(task => {
+                    // Firestore timestamps might be objects, handle both strings and objects
+                    const lastCompletedDate = task.lastCompleted.seconds ? new Date(task.lastCompleted.seconds * 1000) : new Date(task.lastCompleted + 'T00:00:00');
+                    let nextDueDate = new Date(lastCompletedDate);
+                    
+                    switch (task.frequency) {
+                        case 'weekly': nextDueDate.setDate(lastCompletedDate.getDate() + 7); break;
+                        case 'monthly': nextDueDate.setMonth(lastCompletedDate.getMonth() + 1); break;
+                        case 'quarterly': nextDueDate.setMonth(lastCompletedDate.getMonth() + 3); break;
+                        case 'yearly': nextDueDate.setFullYear(lastCompletedDate.getFullYear() + 1); break;
+                    }
+                    nextDueDate.setHours(0,0,0,0);
+                    return { ...task, nextDueDate };
+                });
+
+                const dueTasks = [], dueSoonTasks = [], upcomingTasks = [];
+                scheduleWithDueDates.forEach(task => {
+                    const diffTime = task.nextDueDate - today;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    let dueSoonThreshold = (task.frequency === 'quarterly' || task.frequency === 'yearly') ? 30 : (task.frequency === 'monthly') ? 14 : 7;
+                    if (diffDays <= 0) dueTasks.push({ ...task, diffDays });
+                    else if (diffDays <= dueSoonThreshold) dueSoonTasks.push({ ...task, diffDays });
+                    else upcomingTasks.push({ ...task, diffDays });
+                });
+                
+                const sortByDueDate = (a, b) => a.nextDueDate - b.nextDueDate;
+                [dueTasks, dueSoonTasks, upcomingTasks].forEach(arr => arr.sort(sortByDueDate));
+                
+                const renderTasks = (container, tasks, colorClass, showCompleteBtn) => {
+                    container.innerHTML = ''; // Clear previous entries
+                    if (tasks.length === 0) {
+                        container.innerHTML = `<li><p class="text-gray-500 italic">None</p></li>`;
+                        return;
+                    }
+                    tasks.forEach(task => {
+                        const dueDateString = task.nextDueDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                        let dayString = (task.diffDays <= 0) ? `<span class="font-bold text-red-600">${Math.abs(task.diffDays)} days overdue</span>` : `in ${task.diffDays} days`;
+
+                        const completeBtnHtml = showCompleteBtn ? `<button class="complete-btn ml-4 text-green-600 hover:text-green-800" data-task-id="${task.id}" data-due-date="${task.nextDueDate.toISOString().split('T')[0]}" title="Mark as Completed"><svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg></button>` : '';
+
+                        const li = document.createElement('li');
+                        li.className = 'flex justify-between items-center';
+                        li.innerHTML = `<div class="flex-grow"><span class="font-medium text-gray-700">${task.name}</span><span class="text-xs font-semibold ${colorClass} px-2 py-0.5 rounded-full ml-2">${dueDateString} (${dayString})</span></div> ${completeBtnHtml}`;
+                        container.appendChild(li);
+                    });
+                };
+
+                renderTasks(pmDueContainer, dueTasks, 'bg-red-200 text-red-800', true);
+                renderTasks(pmDueSoonContainer, dueSoonTasks, 'bg-yellow-200 text-yellow-800', true);
+                renderTasks(pmUpcomingContainer, upcomingTasks, 'bg-green-200 text-green-800', false);
+            }
+
+            pmTracker.addEventListener('click', (e) => {
+                const completeBtn = e.target.closest('.complete-btn');
+                if (completeBtn) {
+                    const taskId = completeBtn.dataset.taskId;
+                    const dueDate = completeBtn.dataset.dueDate;
+                    if (taskId && dueDate) {
+                        db.collection('pmSchedule').doc(taskId).update({
+                            lastCompleted: dueDate
+                        }).catch(err => console.error("Error completing task: ", err));
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

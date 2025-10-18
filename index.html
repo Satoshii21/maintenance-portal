@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MMF Maintenance</title>
+    <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-image: linear-gradient(to bottom, rgba(17, 24, 39, 0.5), rgba(17, 24, 39, 0.2)), url('/images/background.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            font-family: 'Inter', sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+        }
+        
+        /* --- Seamless Animation Styles --- */
+        #animation-container {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #animated-logo {
+            width: 256px; /* Starts large (w-64) */
+            margin-bottom: 1rem; /* Starts with margin (mb-4) */
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #splash-text {
+            transition: opacity 0.5s ease-in-out;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+        }
+        .main-buttons {
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out 0.3s;
+        }
+
+        body.animation-end #animation-container {
+            position: relative;
+            width: 100%;
+            max-width: 42rem;
+            padding: 3rem 2rem;
+            border-radius: 1.5rem;
+            background: rgba(0, 0, 0, 0.25);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        body.animation-end #animated-logo {
+            width: 192px; /* Shrinks to final size (w-48) */
+            margin-bottom: 2rem;
+        }
+        body.animation-end .main-buttons {
+            opacity: 1;
+        }
+
+        .tab {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            text-align: center; /* Ensures text is centered on all screen sizes */
+        }
+        .tab:hover {
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        }
+        
+        .modal-backdrop { 
+            animation: fadeIn 0.3s ease-out forwards;
+            z-index: 110; 
+        }
+        .modal-content {
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            animation: fadeInScaleUp 0.4s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeInScaleUp {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        
+        .modal-scroll-content::-webkit-scrollbar { width: 8px; }
+        .modal-scroll-content::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+        .modal-scroll-content::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.3); border-radius: 10px; }
+        .modal-scroll-content::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.5); }
+    </style>
+</head>
+<body class="bg-gray-900 text-white font-sans flex items-center justify-center h-screen p-4 overflow-hidden">
+    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js"></script>
+
+    <div id="animation-container">
+        <img id="animated-logo" src="/images/mmf-logo.png" alt="MMF Logo" class="h-auto">
+        <p id="splash-text" class="text-xl mt-4 tracking-widest uppercase text-gray-300">Maintenance</p>
+        <div class="main-buttons flex flex-col sm:flex-row justify-center sm:space-x-4 space-y-4 sm:space-y-0 w-full">
+            <div id="requestTab" class="tab rounded-lg px-8 py-4 cursor-pointer">
+                <h2 class="text-xl font-semibold">Request Maintenance</h2>
+            </div>
+            <div id="portalTab" class="tab rounded-lg px-8 py-4 cursor-pointer">
+                <h2 class="text-xl font-semibold">Maintenance Portal</h2>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Modal -->
+    <div id="passwordModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden modal-backdrop">
+        <div class="modal-content relative p-8 rounded-2xl shadow-xl text-center max-w-sm w-full">
+            <button id="closePasswordModal" type="button" class="absolute top-4 right-4 text-gray-400 hover:text-white"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            <h2 class="text-2xl font-bold mb-4">Enter Portal Password</h2>
+            <div class="relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3"><svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" /></svg></span>
+                <input type="password" id="passwordInput" class="bg-gray-700 text-white rounded-lg py-2 pl-10 pr-4 w-full focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Password">
+            </div>
+            <div class="flex justify-between items-center my-4">
+                <label class="inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="showPasswordCheckbox" class="form-checkbox h-4 w-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500">
+                    <span class="ml-2 text-sm text-gray-300">Show Password</span>
+                </label>
+                <label class="inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="rememberMeCheckbox" class="form-checkbox h-4 w-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500">
+                    <span class="ml-2 text-sm text-gray-300">Remember Me</span>
+                </label>
+            </div>
+            <button id="submitPassword" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg w-full transition duration-300">Proceed</button>
+            <p id="errorMessage" class="text-red-500 mt-4 hidden">Incorrect Password. Please try again.</p>
+        </div>
+    </div>
+
+    <!-- Request Maintenance Modal -->
+    <div id="requestModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden modal-backdrop">
+        <form name="maintenance-request" id="maintenanceForm" method="POST" data-netlify="true" action="/" class="modal-content relative rounded-2xl shadow-xl text-left max-w-lg w-full flex flex-col h-full max-h-[90vh]">
+            <div class="p-8 border-b border-white/10">
+                <button id="closeRequestModal" type="button" class="absolute top-4 right-4 text-gray-400 hover:text-white"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+                <h2 class="text-2xl font-bold text-center">Submit Maintenance Request</h2>
+            </div>
+            
+            <div class="p-8 overflow-y-auto modal-scroll-content flex-grow">
+                <div class="mb-4">
+                    <label class="block text-white text-sm font-bold mb-2">Area / Line (Select all that apply):</label>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        <input type="hidden" name="form-name" value="maintenance-request" />
+                        <div><label class="inline-flex items-center"><input type="checkbox" name="area" value="Auto 1" class="form-checkbox h-5 w-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"> <span class="ml-2 text-white">Auto 1</span></label></div>
+                        <div><label class="inline-flex items-center"><input type="checkbox" name="area" value="Auto 3" class="form-checkbox h-5 w-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"> <span class="ml-2 text-white">Auto 3</span></label></div>
+                        <div><label class="inline-flex items-center"><input type="checkbox" name="area" value="SQD" class="form-checkbox h-5 w-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"> <span class="ml-2 text-white">SQD</span></label></div>
+                        <div><label class="inline-flex items-center"><input type="checkbox" name="area" value="Barrel Line" class="form-checkbox h-5 w-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"> <span class="ml-2 text-white">Barrel Line</span></label></div>
+                        <div><label class="inline-flex items-center"><input type="checkbox" name="area" value="Waste Treatment" class="form-checkbox h-5 w-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"> <span class="ml-2 text-white">Waste Treatment</span></label></div>
+                        <div><label class="inline-flex items-center"><input type="checkbox" name="area" value="Flake Line" class="form-checkbox h-5 w-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"> <span class="ml-2 text-white">Flake Line</span></label></div>
+                        <div><label class="inline-flex items-center"><input type="checkbox" name="area" value="Other" class="form-checkbox h-5 w-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"> <span class="ml-2 text-white">Other</span></label></div>
+                    </div>
+                </div>
+                <div class="mb-6">
+                     <label for="issueDescription" class="block text-white text-sm font-bold mb-2">Describe the issue: <span class="text-red-500">*</span></label>
+                     <textarea id="issueDescription" name="description" required class="bg-gray-700 text-white rounded-lg px-4 py-2 w-full h-24 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Please provide details about the problem..."></textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="urgent" value="true" class="form-checkbox h-5 w-5 text-red-500 bg-gray-700 border-gray-600 rounded focus:ring-red-500">
+                        <span class="ml-2 text-white font-bold">Mark as Urgent</span>
+                    </label>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-white text-sm font-bold mb-2">Add Photos (optional):</label>
+                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-600 border-dashed rounded-md">
+                        <div class="space-y-1 text-center">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                            <div class="flex text-sm text-gray-400"><label for="file-upload" class="relative cursor-pointer bg-gray-700 rounded-md font-medium text-blue-400 hover:text-blue-500 px-1"><span>Upload files</span><input id="file-upload" name="photos" type="file" class="sr-only" multiple accept="image/*"></label><p class="pl-1">or drag and drop</p></div>
+                            <p class="text-xs text-gray-500">PNG, JPG, GIF</p>
+                        </div>
+                    </div>
+                    <div id="image-preview-container" class="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
+                </div>
+            </div>
+            <div class="p-8 border-t border-white/10 flex justify-between items-center">
+                <button id="cancelRequest" type="button" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">Cancel</button>
+                <button id="submitRequest" type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">Submit Request</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Thank You Modal -->
+    <div id="thankYouModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden modal-backdrop">
+        <div class="modal-content relative p-8 rounded-2xl shadow-xl text-center max-w-sm w-full">
+            <button id="closeThankYouModal" type="button" class="absolute top-4 right-4 text-gray-400 hover:text-white"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            <h2 class="text-2xl font-bold mb-4">Thank You!</h2>
+            <p class="mb-6">We've received your request and will be reaching out to you soon.</p>
+            <button id="closeThankYou" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg w-full transition duration-300">OK</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Animation Logic ---
+            const splashText = document.getElementById('splash-text');
+            const body = document.body;
+
+            setTimeout(() => {
+                splashText.style.opacity = '0';
+                setTimeout(() => {
+                    body.classList.add('animation-end');
+                }, 500); 
+            }, 1500);
+
+            // --- Firebase and Modal Logic ---
+            const firebaseConfig = {
+              apiKey: "AIzaSyAPBdGRepb9XLyysEoKDFqFOOeKaSLe0Dw",
+              authDomain: "mmf-maintenance-portal.firebaseapp.com",
+              projectId: "mmf-maintenance-portal",
+              storageBucket: "mmf-maintenance-portal.firebasestorage.app",
+              messagingSenderId: "238077064193",
+              appId: "1:238077064193:web:b9c3784590693ba8e3fc00",
+              measurementId: "G-MBLLE9N93W"
+            };
+
+            if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+                try {
+                    firebase.initializeApp(firebaseConfig);
+                } catch (e) { console.error("Firebase initialization failed:", e); }
+            } else {
+                console.warn("Firebase config is not set. Real-time features will be disabled.");
+            }
+
+            const portalTab = document.getElementById('portalTab');
+            const passwordModal = document.getElementById('passwordModal');
+            const submitPassword = document.getElementById('submitPassword');
+            const passwordInput = document.getElementById('passwordInput');
+            const showPasswordCheckbox = document.getElementById('showPasswordCheckbox');
+            const rememberMeCheckbox = document.getElementById('rememberMeCheckbox');
+            const errorMessage = document.getElementById('errorMessage');
+            const closePasswordModal = document.getElementById('closePasswordModal');
+
+            const requestTab = document.getElementById('requestTab');
+            const requestModal = document.getElementById('requestModal');
+            const cancelRequest = document.getElementById('cancelRequest');
+            const closeRequestModal = document.getElementById('closeRequestModal');
+            const maintenanceForm = document.getElementById('maintenanceForm');
+            const issueDescription = document.getElementById('issueDescription');
+            const fileUploadInput = document.getElementById('file-upload');
+            const imagePreviewContainer = document.getElementById('image-preview-container');
+
+            const thankYouModal = document.getElementById('thankYouModal');
+            const closeThankYou = document.getElementById('closeThankYou');
+            const closeThankYouModal = document.getElementById('closeThankYouModal');
+            let uploadedFiles = [];
+
+            const openModal = (modalEl) => modalEl.classList.remove('hidden');
+            const closeModal = (modalEl) => modalEl.classList.add('hidden');
+
+            portalTab.addEventListener('click', () => {
+                if (localStorage.getItem('rememberPassword') === 'true') {
+                    window.location.href = 'dashboard.html';
+                } else {
+                    openModal(passwordModal);
+                    passwordInput.focus();
+                }
+            });
+            
+            closePasswordModal.addEventListener('click', () => closeModal(passwordModal));
+            
+            submitPassword.addEventListener('click', () => {
+                if (passwordInput.value === 'mmfmx') {
+                    if (rememberMeCheckbox.checked) {
+                        localStorage.setItem('rememberPassword', 'true');
+                    } else {
+                        localStorage.removeItem('rememberPassword');
+                    }
+                    window.location.href = 'dashboard.html';
+                } else {
+                    errorMessage.classList.remove('hidden');
+                }
+            });
+
+            passwordInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') submitPassword.click(); });
+            showPasswordCheckbox.addEventListener('change', () => { passwordInput.type = showPasswordCheckbox.checked ? 'text' : 'password'; });
+
+            requestTab.addEventListener('click', () => openModal(requestModal));
+            cancelRequest.addEventListener('click', () => closeModal(requestModal));
+            closeRequestModal.addEventListener('click', () => closeModal(requestModal));
+            closeThankYou.addEventListener('click', () => closeModal(thankYouModal));
+            closeThankYouModal.addEventListener('click', () => closeModal(thankYouModal));
+
+            fileUploadInput.addEventListener('change', (event) => {
+                imagePreviewContainer.innerHTML = '';
+                uploadedFiles = Array.from(event.target.files);
+                uploadedFiles.forEach((file, index) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const previewWrapper = document.createElement('div');
+                        previewWrapper.className = 'relative';
+                        previewWrapper.innerHTML = `<img src="${e.target.result}" class="h-24 w-full object-cover rounded-md"><button data-index="${index}" class="remove-img-btn absolute top-0 right-0 bg-red-600 text-white rounded-full h-6 w-6 flex items-center justify-center text-xs">&times;</button>`;
+                        imagePreviewContainer.appendChild(previewWrapper);
+                    };
+                    reader.readAsDataURL(file);
+                });
+            });
+            
+            imagePreviewContainer.addEventListener('click', (e) => {
+                if(e.target.classList.contains('remove-img-btn')) {
+                    const indexToRemove = parseInt(e.target.dataset.index);
+                    uploadedFiles.splice(indexToRemove, 1);
+                    const dataTransfer = new DataTransfer();
+                    uploadedFiles.forEach(file => dataTransfer.items.add(file));
+                    fileUploadInput.files = dataTransfer.files;
+                    fileUploadInput.dispatchEvent(new Event('change', { 'bubbles': true }));
+                }
+            });
+
+            const resetForm = () => {
+                maintenanceForm.reset();
+                imagePreviewContainer.innerHTML = '';
+                uploadedFiles = [];
+            };
+
+            const handleFormSubmit = (event) => {
+                event.preventDefault();
+                if (!issueDescription.value.trim()) { alert("Please describe the issue."); return; }
+                const formData = new FormData(maintenanceForm);
+                
+                const saveRequestToFirestore = () => {
+                    if (firebaseConfig.apiKey === "YOUR_API_KEY" || typeof firebase === 'undefined' || typeof firebase.firestore === 'undefined') {
+                        console.warn("Firestore submission skipped: Firebase not configured."); return;
+                    }
+                    const db = firebase.firestore();
+                    const readerPromises = uploadedFiles.map(file => new Promise(resolve => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve(e.target.result);
+                        reader.readAsDataURL(file);
+                    }));
+
+                    Promise.all(readerPromises).then(images => {
+                        const requestData = {
+                            // BUG FIX APPLIED HERE: Removed id: Date.now()
+                            status: 'New',
+                            areas: formData.getAll('area'),
+                            description: formData.get('description'),
+                            isUrgent: formData.has('urgent'),
+                            images: images,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        };
+                        db.collection("maintenanceRequests").add(requestData)
+                          .then(docRef => console.log("Request saved to Firestore with ID:", docRef.id))
+                          .catch(error => console.error("Error adding document to Firestore:", error));
+                    });
+                };
+
+                fetch("/", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: new URLSearchParams(formData).toString(),
+                })
+                .then(response => console.log(response.ok ? "Form submitted successfully to Netlify." : "Netlify submission failed."))
+                .catch(error => console.error("Netlify submission error:", error));
+
+                saveRequestToFirestore();
+                closeModal(requestModal);
+                openModal(thankYouModal);
+                resetForm();
+            };
+            maintenanceForm.addEventListener('submit', handleFormSubmit);
+        });
+    </script>
+</body>
+</html>

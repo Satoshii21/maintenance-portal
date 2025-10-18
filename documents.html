@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documents</title>
+    <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f7f6;
+        }
+        .category-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            background-color: white;
+        }
+        .category-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.12);
+        }
+        .modal-backdrop {
+            transition: opacity 0.3s ease-in-out;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .modal-backdrop.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-content {
+            transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        .modal-backdrop.active .modal-content {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .document-link:hover {
+            background-color: #f9fafb; /* gray-50 */
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <header class="bg-white shadow-lg rounded-xl p-6 pt-16 sm:p-6 mb-8 text-center relative">
+             <a href="dashboard.html" class="absolute top-4 left-4 sm:top-6 sm:left-6 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-300 transition duration-300 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+                <span>Dashboard</span>
+            </a>
+            <img src="/images/mmf-logo2.png" alt="MMF Logo" class="h-14 mx-auto mb-2">
+            <h1 class="text-3xl font-bold text-gray-800">Documents</h1>
+            <p class="text-gray-500 mt-1">Download important forms and instructions.</p>
+        </header>
+
+        <main class="grid gap-8 md:grid-cols-2">
+            <!-- Maintenance QF Forms Category Card -->
+            <div id="qf-forms-card" class="category-card shadow-md rounded-lg p-8 cursor-pointer text-center">
+                <h2 class="text-2xl font-bold text-blue-600">Maintenance QF Forms</h2>
+                <p class="text-gray-600 mt-2">Download daily checklists, PM forms, and calibration records.</p>
+            </div>
+
+            <!-- Rack Build Instructions Category Card -->
+            <div id="rack-instructions-card" class="category-card shadow-md rounded-lg p-8 cursor-pointer text-center">
+                <h2 class="text-2xl font-bold text-green-600">Rack Build Instructions</h2>
+                <p class="text-gray-600 mt-2">View and download assembly instructions for various rack types.</p>
+            </div>
+        </main>
+    </div>
+
+    <!-- Document List Modal -->
+    <div id="listModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden modal-backdrop p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl h-[70vh] flex flex-col modal-content">
+            <header class="p-4 border-b">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 id="listModalTitle" class="text-xl font-semibold text-gray-800"></h3>
+                    <button id="closeListModalBtn" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+                </div>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <input type="text" id="documentSearchInput" class="w-full p-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400" placeholder="Search documents...">
+                </div>
+            </header>
+            <div id="listModalBody" class="flex-grow p-4 overflow-y-auto">
+                <!-- Document links will be injected here -->
+            </div>
+             <p id="noDocumentsFound" class="text-center p-8 text-gray-500 hidden">No documents match your search.</p>
+        </div>
+    </div>
+
+    <!-- Document Viewer Modal -->
+    <div id="documentModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden modal-backdrop p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-[90vh] flex flex-col modal-content">
+            <header class="p-4 border-b flex justify-between items-center">
+                <h3 id="modalTitle" class="text-lg font-semibold text-gray-800"></h3>
+                <div class="flex items-center gap-4">
+                    <a id="modalDownloadBtn" href="#" download class="bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-600 transition duration-300 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                        <span>Download</span>
+                    </a>
+                    <button id="closeModalBtn" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+                </div>
+            </header>
+            <div class="flex-grow p-4 overflow-y-auto">
+                <iframe id="modalIframe" src="" class="w-full h-full" frameborder="0"></iframe>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // NOTE: PDF paths updated to be root-relative for reliable deployment.
+            // Ensure you have a 'pdfs' folder in the root of your project.
+            const documents = {
+                qfForms: [
+                    { title: 'QF-0174 Weekly line-area check sheet', description: 'Weekly checklist for line areas.', url: '/pdfs/QF - 0174 Weekly line-area check sheet.pdf' },
+                    { title: 'QF-0175 Quarterly line-area check-sheet', description: 'Quarterly checklist for line areas.', url: '/pdfs/QF - 0175 Quarterly line-area check-sheet.pdf' },
+                    { title: 'QF-184 Maintenance Daily Checklist (Binder Cover)', description: 'Cover page for the daily checklist binder.', url: '/pdfs/QF - 184 Maintenance Daily Checklist (Binder Cover).PDF' },
+                    { title: 'QF-184 Maintenance Daily Checklist', description: 'The official daily checklist for maintenance.', url: '/pdfs/QF - 184 Maintenance Daily Checklist.PDF' }
+                ],
+                rackInstructions: [
+                    { title: 'Auto 1 Big Pin Rack (22 Hook)', description: 'Assembly instructions for the Big Pin Rack.', url: '/pdfs/Auto 1 Big Pin Rack (22 Hook).pdf' },
+                    { title: 'Auto 1 Vertical Halfmoon (3 Tip)', description: 'Assembly instructions for the Vertical Halfmoon Rack.', url: '/pdfs/Auto 1 Vertical Halfmoon (3 Tip).pdf' },
+                    { title: 'Auto 1 Vertical Halfmoon', description: 'Assembly instructions for the Vertical Halfmoon Rack.', url: '/pdfs/Auto 1 Vertical Halfmoon.pdf' },
+                    { title: 'Copper J Hook', description: 'Assembly instructions for the Copper J Hook.', url: '/pdfs/Copper J Hook.pdf' },
+                    { title: 'SQD 3-Tip & J Hook', description: 'Assembly instructions.', url: '/pdfs/SQD 3-Tip & J Hook.pdf' },
+                    { title: 'SQD 3-Tip & Halfmoon', description: 'Assembly instructions.', url: '/pdfs/SQD 3-Tip & Halfmoon.pdf' },
+                    { title: 'SQD Halfmoon', description: 'Assembly instructions.', url: '/pdfs/SQD Halfmoon.pdf' },
+                    { title: 'SQD I Frames', description: 'Assembly instructions for I Frame Racks.', url: '/pdfs/SQD I Frames.pdf' },
+                    { title: 'SQD Jewell Rack', description: 'Assembly instructions for the Jewell Rack.', url: '/pdfs/SQD Jewell Rack.pdf' },
+                    { title: 'SQD Pin Rack', description: 'Assembly instructions for the Pin Rack.', url: '/pdfs/SQD Pin Rack.pdf' },
+                    { title: 'SQD Tape Pin Rack', description: 'Assembly instructions for the Tape Pin Rack.', url: '/pdfs/SQD Tape Pin Rack.pdf' },
+                    { title: 'SQD Tree Rack (4 hook)', description: 'Assembly instructions for the Tree Rack.', url: '/pdfs/SQD Tree Rack (4 hook).pdf' },
+                    { title: 'SQD Tuned Halfmoon', description: 'Assembly instructions.', url: '/pdfs/SQD Tuned Halfmoon.pdf' }
+                ]
+            };
+
+            const qfFormsCard = document.getElementById('qf-forms-card');
+            const rackInstructionsCard = document.getElementById('rack-instructions-card');
+            
+            const listModal = document.getElementById('listModal');
+            const listModalTitle = document.getElementById('listModalTitle');
+            const listModalBody = document.getElementById('listModalBody');
+            const closeListModalBtn = document.getElementById('closeListModalBtn');
+            const documentSearchInput = document.getElementById('documentSearchInput');
+            const noDocumentsFound = document.getElementById('noDocumentsFound');
+
+            const documentModal = document.getElementById('documentModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalIframe = document.getElementById('modalIframe');
+            const modalDownloadBtn = document.getElementById('modalDownloadBtn');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+
+            let currentCategoryKey = null;
+
+            const openModal = (modalEl) => {
+                modalEl.classList.remove('hidden');
+                setTimeout(() => modalEl.classList.add('active'), 10);
+            };
+
+            const closeModal = (modalEl) => {
+                modalEl.classList.remove('active');
+                if (modalEl.id === 'documentModal') {
+                    modalIframe.src = 'about:blank';
+                }
+                setTimeout(() => modalEl.classList.add('hidden'), 300);
+            };
+
+            const renderDocumentList = (filter = '') => {
+                listModalBody.innerHTML = '';
+                const lowerCaseFilter = filter.toLowerCase();
+
+                const filteredDocs = documents[currentCategoryKey].filter(doc => 
+                    doc.title.toLowerCase().includes(lowerCaseFilter) ||
+                    doc.description.toLowerCase().includes(lowerCaseFilter)
+                );
+
+                noDocumentsFound.classList.toggle('hidden', filteredDocs.length > 0);
+
+                const highlight = (text) => {
+                    if (!filter.trim()) return text;
+                    const regex = new RegExp(`(${filter.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+                    return text.replace(regex, '<mark class="bg-blue-100 text-blue-800 rounded px-1 py-0.5">$1</mark>');
+                };
+
+                filteredDocs.forEach(doc => {
+                    const linkEl = document.createElement('div');
+                    linkEl.className = 'document-link p-4 border-b flex justify-between items-center';
+                    linkEl.innerHTML = `
+                        <div class="preview-area cursor-pointer flex-grow" data-title="${doc.title}" data-url="${doc.url}">
+                            <h4 class="font-semibold text-gray-800">${highlight(doc.title)}</h4>
+                            <p class="text-sm text-gray-500">${highlight(doc.description)}</p>
+                        </div>
+                        <a href="${doc.url}" download="${doc.title.replace(/ /g, '_')}.pdf" title="Download ${doc.title}" class="ml-4 p-2 rounded-full hover:bg-gray-100 transition-colors flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                        </a>
+                    `;
+                    listModalBody.appendChild(linkEl);
+                });
+            };
+            
+            const openCategoryModal = (categoryKey, title) => {
+                currentCategoryKey = categoryKey;
+                listModalTitle.textContent = title;
+                documentSearchInput.value = '';
+                renderDocumentList();
+                openModal(listModal);
+            };
+            
+            qfFormsCard.addEventListener('click', () => openCategoryModal('qfForms', 'Maintenance QF Forms'));
+            rackInstructionsCard.addEventListener('click', () => openCategoryModal('rackInstructions', 'Rack Build Instructions'));
+            closeListModalBtn.addEventListener('click', () => closeModal(listModal));
+
+            documentSearchInput.addEventListener('input', (e) => {
+                renderDocumentList(e.target.value);
+            });
+
+            listModalBody.addEventListener('click', (e) => {
+                const previewArea = e.target.closest('.preview-area');
+                if (previewArea) {
+                    const title = previewArea.dataset.title;
+                    const url = previewArea.dataset.url;
+                    
+                    if (url === '#') {
+                        alert('This document does not have a valid link yet.');
+                        return;
+                    }
+
+                    modalTitle.textContent = title;
+                    modalIframe.src = url;
+                    modalDownloadBtn.href = url;
+                    modalDownloadBtn.setAttribute('download', title.replace(/ /g, '_') + '.pdf');
+
+
+                    openModal(documentModal);
+                }
+            });
+
+            closeModalBtn.addEventListener('click', () => closeModal(documentModal));
+            
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    if (!documentModal.classList.contains('hidden')) {
+                        closeModal(documentModal);
+                    } else if (!listModal.classList.contains('hidden')) {
+                        closeModal(listModal);
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
