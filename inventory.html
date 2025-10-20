@@ -211,7 +211,7 @@
         </div>
 
         <main>
-            <!-- Loading Spinner (New) -->
+            <!-- Loading Spinner -->
             <div id="loading-spinner" class="text-center py-12">
                 <svg class="animate-spin h-8 w-8 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                 <p class="mt-4 text-gray-500">Loading Inventory...</p>
@@ -243,13 +243,16 @@
             <h2 id="modalTitle" class="text-2xl font-bold text-gray-800 mb-6"></h2>
             <form id="itemForm">
                 <input type="hidden" id="itemId">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div><label for="itemName" class="block text-gray-700 text-sm font-bold mb-2">Item Name</label><input type="text" id="itemName" class="shadow-sm border rounded-lg w-full py-2 px-3 text-gray-700" required></div>
                     <div><label for="itemCategory" class="block text-gray-700 text-sm font-bold mb-2">Category</label><input type="text" id="itemCategory" class="shadow-sm border rounded-lg w-full py-2 px-3 text-gray-700" required></div>
-                    <div><label for="itemQuantity" class="block text-gray-700 text-sm font-bold mb-2">Quantity</label><input type="number" id="itemQuantity" class="shadow-sm border rounded-lg w-full py-2 px-3 text-gray-700" required></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div><label for="itemQuantity" class="block text-gray-700 text-sm font-bold mb-2">Current Quantity</label><input type="number" id="itemQuantity" class="shadow-sm border rounded-lg w-full py-2 px-3 text-gray-700" required></div>
+                    <div><label for="lowStockThreshold" class="block text-gray-700 text-sm font-bold mb-2">Low Stock Level</label><input type="number" id="lowStockThreshold" class="shadow-sm border rounded-lg w-full py-2 px-3 text-gray-700" placeholder="e.g., 10" required></div>
                     <div><label for="itemLocation" class="block text-gray-700 text-sm font-bold mb-2">Location</label><input type="text" id="itemLocation" class="shadow-sm border rounded-lg w-full py-2 px-3 text-gray-700" required></div>
                 </div>
-                 <div class="mt-4 mb-6"><label for="itemReorderLink" class="block text-gray-700 text-sm font-bold mb-2">Reorder Link (Optional)</label><input type="url" id="itemReorderLink" class="shadow-sm border rounded-lg w-full py-2 px-3 text-gray-700" placeholder="https://example.com/reorder"></div>
+                <div class="mt-4 mb-6"><label for="itemReorderLink" class="block text-gray-700 text-sm font-bold mb-2">Reorder Link (Optional)</label><input type="url" id="itemReorderLink" class="shadow-sm border rounded-lg w-full py-2 px-3 text-gray-700" placeholder="https://example.com/reorder"></div>
                 <div class="flex justify-end space-x-4"><button type="button" id="cancelBtn" class="bg-gray-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600">Cancel</button><button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">Save Item</button></div>
             </form>
         </div>
@@ -334,8 +337,7 @@
             const outOfStockItemsContainer = document.getElementById('outOfStockItemsContainer');
             const dismissOutOfStockBtn = document.getElementById('dismissOutOfStock');
             const dismissLowStockBtn = document.getElementById('dismissLowStock');
-            const LOW_STOCK_THRESHOLD = 10;
-
+            
             const itemModal = document.getElementById('itemModal');
             const modalTitle = document.getElementById('modalTitle');
             const cancelBtn = document.getElementById('cancelBtn');
@@ -346,6 +348,7 @@
             const itemQuantity = document.getElementById('itemQuantity');
             const itemLocation = document.getElementById('itemLocation');
             const itemReorderLink = document.getElementById('itemReorderLink');
+            const lowStockThresholdInput = document.getElementById('lowStockThreshold');
 
             const deleteModal = document.getElementById('deleteModal');
             const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
@@ -372,11 +375,11 @@
                     if (snapshot.empty) {
                         console.log("Inventory is empty. Seeding initial data...");
                         const initialInventory = [
-                            { name: 'Air Filters (HVAC)', category: 'HVAC', quantity: 5, location: 'Storage Room A', reorderLink: 'https://www.grainger.com', notificationSent: 'none' },
-                            { name: 'Light Bulbs (LED)', category: 'Electrical', quantity: 200, location: 'Storage Room B', reorderLink: '', notificationSent: 'none' },
-                            { name: 'Paint (White, 1 Gallon)', category: 'Painting', quantity: 0, location: 'Paint Locker', reorderLink: 'https://www.sherwin-williams.com', notificationSent: 'none' },
-                            { name: 'Spindown Filters', category: 'Plumbing', quantity: 8, location: 'Storage Room A', reorderLink: '', notificationSent: 'none' },
-                            { name: 'Door Hinges', category: 'Hardware', quantity: 75, location: 'Storage Room B', reorderLink: '', notificationSent: 'none' }
+                            { name: 'Air Filters (HVAC)', category: 'HVAC', quantity: 5, location: 'Storage Room A', reorderLink: 'https://www.grainger.com', notificationSent: 'none', lowStockThreshold: 10 },
+                            { name: 'Light Bulbs (LED)', category: 'Electrical', quantity: 200, location: 'Storage Room B', reorderLink: '', notificationSent: 'none', lowStockThreshold: 50 },
+                            { name: 'Paint (White, 1 Gallon)', category: 'Painting', quantity: 0, location: 'Paint Locker', reorderLink: 'https://www.sherwin-williams.com', notificationSent: 'none', lowStockThreshold: 2 },
+                            { name: 'Spindown Filters', category: 'Plumbing', quantity: 8, location: 'Storage Room A', reorderLink: '', notificationSent: 'none', lowStockThreshold: 5 },
+                            { name: 'Door Hinges', category: 'Hardware', quantity: 75, location: 'Storage Room B', reorderLink: '', notificationSent: 'none', lowStockThreshold: 20 }
                         ];
                         const batch = db.batch();
                         initialInventory.forEach(item => {
@@ -421,8 +424,9 @@
 
             const checkAndSendNotifications = () => {
                 inventory.forEach(item => {
+                    const threshold = item.lowStockThreshold || 10;
                     const isOutOfStock = item.quantity === 0;
-                    const isLowStock = item.quantity > 0 && item.quantity <= LOW_STOCK_THRESHOLD;
+                    const isLowStock = item.quantity > 0 && item.quantity <= threshold;
 
                     if (isOutOfStock && item.notificationSent !== 'out') {
                         sendNotificationEmail(item);
@@ -450,7 +454,7 @@
                 const unacknowledged = inventory.filter(i => !sessionStorage.getItem('acknowledgedItems')?.includes(i.id));
 
                 const outOfStock = unacknowledged.filter(i => i.quantity === 0);
-                const lowStock = unacknowledged.filter(i => i.quantity > 0 && i.quantity <= LOW_STOCK_THRESHOLD);
+                const lowStock = unacknowledged.filter(i => i.quantity > 0 && i.quantity <= (i.lowStockThreshold || 10));
 
                 outOfStockAlerts.classList.toggle('visible', outOfStock.length > 0 && (!outDismissed || now > outDismissed));
                 if (outOfStockAlerts.classList.contains('visible')) {
@@ -487,7 +491,8 @@
 
                 filtered.forEach((item, index) => {
                     const row = document.createElement('tr');
-                    const isLow = item.quantity > 0 && item.quantity <= LOW_STOCK_THRESHOLD;
+                    const threshold = item.lowStockThreshold || 10;
+                    const isLow = item.quantity > 0 && item.quantity <= threshold;
                     const isOutOfStock = item.quantity === 0;
                     row.className = `inventory-row hover:bg-gray-50 ${isOutOfStock ? 'out-of-stock' : isLow ? 'low-stock' : ''}`;
                     const reorderBtn = (isLow || isOutOfStock) && item.reorderLink ? `<button onclick="window.open('${item.reorderLink}', '_blank')" class="bg-green-500 text-white px-3 py-1 rounded-md text-sm font-semibold hover:bg-green-600">Reorder</button>` : '';
@@ -536,7 +541,8 @@
                     category: itemCategory.value, 
                     quantity: parseInt(itemQuantity.value), 
                     location: itemLocation.value, 
-                    reorderLink: itemReorderLink.value 
+                    reorderLink: itemReorderLink.value,
+                    lowStockThreshold: parseInt(lowStockThresholdInput.value) || 10
                 };
                 if (id) {
                     db.collection('maintenanceInventory').doc(id).update(newItemData);
@@ -567,6 +573,7 @@
                     itemQuantity.value = item.quantity;
                     itemLocation.value = item.location;
                     itemReorderLink.value = item.reorderLink;
+                    lowStockThresholdInput.value = item.lowStockThreshold || 10;
                 } else {
                     itemId.value = '';
                 }
