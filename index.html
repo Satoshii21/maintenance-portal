@@ -16,23 +16,6 @@
             font-family: 'Inter', sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
         }
         
-        /* --- Loading Spinner (New) --- */
-        #page-loader {
-            position: fixed;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 200;
-            background: rgba(17, 24, 39, 0.8);
-            backdrop-filter: blur(5px);
-            transition: opacity 0.5s ease;
-        }
-        #page-loader.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
         /* --- Seamless Animation Styles --- */
         #animation-container {
             position: fixed;
@@ -43,12 +26,7 @@
             justify-content: center;
             z-index: 100;
             transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-            opacity: 0; /* Start hidden */
         }
-        body.loaded #animation-container {
-            opacity: 1; /* Fade in when ready */
-        }
-
         #animated-logo {
             width: 256px; /* Starts large (w-64) */
             margin-bottom: 1rem; /* Starts with margin (mb-4) */
@@ -123,11 +101,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js"></script>
     
-    <!-- Page Loader (New) -->
-    <div id="page-loader">
-        <svg class="animate-spin h-10 w-10 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-    </div>
-
     <div id="animation-container">
         <img id="animated-logo" src="/images/mmf-logo.png" alt="MMF Logo" class="h-auto">
         <p id="splash-text" class="text-xl mt-4 tracking-widest uppercase text-gray-300">Maintenance</p>
@@ -227,7 +200,6 @@
     </div>
     
     <!-- Netlify Bot-Only Form -->
-    <!-- This is a hidden version of the form for Netlify to detect during deployment. -->
     <form name="maintenance-request" data-netlify="true" netlify-honeypot="bot-field" hidden>
         <input type="hidden" name="form-name" value="maintenance-request" />
         <p class="hidden">
@@ -249,6 +221,7 @@
 
 
     <script>
+        // ** FINAL PERFORMANCE FIX **
         let firebaseInitializationPromise = null;
         async function initializeFirebase() {
             if (firebaseInitializationPromise) return firebaseInitializationPromise;
@@ -278,19 +251,15 @@
         }
 
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            const pageLoader = document.getElementById('page-loader');
-            const body = document.body;
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- This section now runs instantly, without waiting for the server ---
             
-            // ** PERFORMANCE FIX: Pre-warm and wait for the connection **
-            await initializeFirebase();
-            
-            // Hide loader and show content
-            pageLoader.classList.add('hidden');
-            body.classList.add('loaded');
+            // 1. Kick off the slow server connection in the background.
+            initializeFirebase(); 
 
-            // --- Animation Logic ---
+            // 2. Immediately run the visual animations.
             const splashText = document.getElementById('splash-text');
+            const body = document.body;
             setTimeout(() => {
                 splashText.style.opacity = '0';
                 setTimeout(() => {
@@ -298,7 +267,7 @@
                 }, 500); 
             }, 1500);
 
-            // --- Modal and Form Logic ---
+            // 3. Set up all the interactive elements.
             const portalTab = document.getElementById('portalTab');
             const passwordModal = document.getElementById('passwordModal');
             const submitPassword = document.getElementById('submitPassword');
@@ -396,7 +365,8 @@
                 if (!issueDescription.value.trim()) { alert("Please describe the issue."); return; }
                 const formData = new FormData(maintenanceForm);
                 
-                const isFirebaseInitialized = await initializeFirebase();
+                // This will now wait for the background process to finish if it hasn't already.
+                const isFirebaseInitialized = await firebaseInitializationPromise;
 
                 const saveRequestToFirestore = () => {
                     if (!isFirebaseInitialized) {
