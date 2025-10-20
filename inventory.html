@@ -211,7 +211,13 @@
         </div>
 
         <main>
-            <div class="bg-white shadow-lg rounded-xl overflow-x-auto">
+            <!-- Loading Spinner (New) -->
+            <div id="loading-spinner" class="text-center py-12">
+                <svg class="animate-spin h-8 w-8 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                <p class="mt-4 text-gray-500">Loading Inventory...</p>
+            </div>
+
+            <div id="table-container" class="bg-white shadow-lg rounded-xl overflow-x-auto hidden">
                 <table class="w-full table-auto">
                     <thead class="bg-gray-50 border-b-2 border-gray-200">
                         <tr>
@@ -312,6 +318,9 @@
         }
 
         function setupPageListeners() {
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const tableContainer = document.getElementById('table-container');
+
             const body = document.body;
             const viewModeToggle = document.getElementById('viewModeToggle');
             const addItemBtn = document.getElementById('addItemBtn');
@@ -379,16 +388,19 @@
                 });
 
                 unsubscribe = inventoryCollection.onSnapshot(snapshot => {
+                    loadingSpinner.classList.add('hidden');
+                    tableContainer.classList.remove('hidden');
+
                     inventory = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     renderInventory(searchInput.value);
                     checkAndSendNotifications();
                 }, error => {
                     console.error("Error fetching inventory from Firestore: ", error);
+                    loadingSpinner.textContent = 'Error loading data.';
                 });
             }
 
             const sendNotificationEmail = (item) => {
-                // This check prevents the function from running in local development / previews.
                 if (window.location.hostname.includes('netlify.app')) {
                     fetch('/.netlify/functions/send-email', {
                         method: 'POST',
