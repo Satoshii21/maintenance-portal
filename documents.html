@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device--width, initial-scale=1.0">
     <title>Documents</title>
     <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -118,8 +118,7 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // NOTE: PDF paths updated to be root-relative for reliable deployment.
-            // Ensure you have a 'pdfs' folder in the root of your project.
+            // NOTE: Create a 'pdfs' folder in your project and place your files there.
             const documents = {
                 qfForms: [
                     { title: 'QF-0174 Weekly line-area check sheet', description: 'Weekly checklist for line areas.', url: '/pdfs/QF - 0174 Weekly line-area check sheet.pdf' },
@@ -128,19 +127,34 @@
                     { title: 'QF-184 Maintenance Daily Checklist', description: 'The official daily checklist for maintenance.', url: '/pdfs/QF - 184 Maintenance Daily Checklist.PDF' }
                 ],
                 rackInstructions: [
-                    { title: 'Auto 1 Big Pin Rack (22 Hook)', description: 'Assembly instructions for the Big Pin Rack.', url: '/pdfs/Auto 1 Big Pin Rack (22 Hook).pdf' },
-                    { title: 'Auto 1 Vertical Halfmoon (3 Tip)', description: 'Assembly instructions for the Vertical Halfmoon Rack.', url: '/pdfs/Auto 1 Vertical Halfmoon (3 Tip).pdf' },
-                    { title: 'Auto 1 Vertical Halfmoon', description: 'Assembly instructions for the Vertical Halfmoon Rack.', url: '/pdfs/Auto 1 Vertical Halfmoon.pdf' },
-                    { title: 'Copper J Hook', description: 'Assembly instructions for the Copper J Hook.', url: '/pdfs/Copper J Hook.pdf' },
+                    { title: 'Auto 1 Big Pin Rack (22 hook)', description: 'Assembly instructions for the Big Pin Rack.', url: '/pdfs/Auto 1 Big Pin Rack (22 hook).pdf' },
+                    { title: 'Auto 1 Big Tip Pin Rack', description: 'Assembly instructions.', url: '/pdfs/Auto 1 Big Tip Pin Rack.pdf' },
+                    { title: 'Auto 1 Double Sided Pin Rack', description: 'Assembly instructions.', url: '/pdfs/Auto 1 Double Sided Pin Rack.pdf' },
+                    { title: 'Auto 1 Frame I', description: 'Assembly instructions.', url: '/pdfs/Auto 1 Frame I.pdf' },
+                    { title: 'Auto 1 Halfmoon (20 tip)', description: 'Assembly instructions.', url: '/pdfs/Auto 1 Halfmoon (20 tip).pdf' },
+                    { title: 'Auto 1 Jewell Rack', description: 'Assembly instructions.', url: '/pdfs/Auto 1 Jewell Rack.pdf' },
+                    { title: 'Auto 1 Sleeve Rack (20 station)', description: 'Assembly instructions.', url: '/pdfs/Auto 1 Sleeve Rack (20 station).pdf' },
+                    { title: 'Auto 1 Tree Rack (8 hook)', description: 'Assembly instructions.', url: '/pdfs/Auto 1 Tree Rack (8 hook).pdf' },
+                    { title: 'Auto 1 Tree Rack (12 hook)', description: 'Assembly instructions.', url: '/pdfs/Auto 1 Tree Rack (12 hook).pdf' },
+                    { title: 'Auto 1 Tube Rack (inside diameter)', description: 'Assembly instructions.', url: '/pdfs/Auto 1 Tube Rack (inside diameter).pdf' },
+                    { title: 'Auto 1 Turned Halfmoon (20 tip)', description: 'Assembly instructions.', url: '/pdfs/Auto 1 Turned Halfmoon (20 tip).pdf' },
+                    { title: 'Auto 1 Vertical Halfmoon (3 Tip)', description: 'Assembly instructions.', url: '/pdfs/Auto 1 Vertical Halfmoon (3 Tip).pdf' },
+                    { title: 'Auto 1 Vertical Halfmoon', description: 'Assembly instructions.', url: '/pdfs/Auto 1 Vertical Halfmoon.pdf' },
+                    { title: 'Copper J Hook', description: 'Assembly instructions.', url: '/pdfs/Copper J Hook.pdf' },
                     { title: 'SQD 3-Tip & J Hook', description: 'Assembly instructions.', url: '/pdfs/SQD 3-Tip & J Hook.pdf' },
                     { title: 'SQD 3-Tip & Halfmoon', description: 'Assembly instructions.', url: '/pdfs/SQD 3-Tip & Halfmoon.pdf' },
+                    { title: 'SQD Big Tip Pin Rack', description: 'Assembly instructions.', url: '/pdfs/SQD Big Tip Pin Rack.pdf' },
+                    { title: 'SQD Frame', description: 'Assembly instructions.', url: '/pdfs/SQD Frame.pdf' },
                     { title: 'SQD Halfmoon', description: 'Assembly instructions.', url: '/pdfs/SQD Halfmoon.pdf' },
                     { title: 'SQD I Frames', description: 'Assembly instructions for I Frame Racks.', url: '/pdfs/SQD I Frames.pdf' },
                     { title: 'SQD Jewell Rack', description: 'Assembly instructions for the Jewell Rack.', url: '/pdfs/SQD Jewell Rack.pdf' },
                     { title: 'SQD Pin Rack', description: 'Assembly instructions for the Pin Rack.', url: '/pdfs/SQD Pin Rack.pdf' },
+                    { title: 'SQD Sleeve Rack', description: 'Assembly instructions.', url: '/pdfs/SQD Sleeve Rack.pdf' },
                     { title: 'SQD Tape Pin Rack', description: 'Assembly instructions for the Tape Pin Rack.', url: '/pdfs/SQD Tape Pin Rack.pdf' },
                     { title: 'SQD Tree Rack (4 hook)', description: 'Assembly instructions for the Tree Rack.', url: '/pdfs/SQD Tree Rack (4 hook).pdf' },
-                    { title: 'SQD Tuned Halfmoon', description: 'Assembly instructions.', url: '/pdfs/SQD Tuned Halfmoon.pdf' }
+                    { title: 'SQD Tree Rack (10 hook)', description: 'Assembly instructions.', url: '/pdfs/SQD Tree Rack (10 hook).pdf' },
+                    { title: 'SQD Tuned Halfmoon', description: 'Assembly instructions.', url: '/pdfs/SQD Tuned Halfmoon.pdf' },
+                    { title: 'SQD Vertical Halfmoon', description: 'Assembly instructions.', url: '/pdfs/SQD Vertical Halfmoon.pdf' }
                 ]
             };
 
@@ -191,6 +205,9 @@
                     const regex = new RegExp(`(${filter.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
                     return text.replace(regex, '<mark class="bg-blue-100 text-blue-800 rounded px-1 py-0.5">$1</mark>');
                 };
+
+                // Sort documents alphabetically by title before rendering
+                filteredDocs.sort((a, b) => a.title.localeCompare(b.title));
 
                 filteredDocs.forEach(doc => {
                     const linkEl = document.createElement('div');
@@ -262,3 +279,4 @@
     </script>
 </body>
 </html>
+

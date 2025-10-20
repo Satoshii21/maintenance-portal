@@ -1,0 +1,11 @@
+# This file tells Netlify where to find your serverless functions.
+# When you deploy your site, Netlify will read this file and set up
+# the functions in the specified directory automatically.
+
+[functions]
+  # This is the directory where all your Netlify Functions will live.
+  directory = "netlify/functions/"
+
+  # Specifies the version of Node.js to use for running the functions.
+  # Using a recent, stable version is recommended.
+  node_bundler = "esbuild"
