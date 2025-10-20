@@ -147,17 +147,30 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const firebaseConfig = {
-              apiKey: "AIzaSyAPBdGRepb9XLyysEoKDFqFOOeKaSLe0Dw",
-              authDomain: "mmf-maintenance-portal.firebaseapp.com",
-              projectId: "mmf-maintenance-portal",
-              storageBucket: "mmf-maintenance-portal.firebasestorage.app",
-              messagingSenderId: "238077064193",
-              appId: "1:238077064193:web:b9c3784590693ba8e3fc00",
-              measurementId: "G-MBLLE9N93W"
-            };
+        async function initializeApp() {
+            try {
+                const response = await fetch('/.netlify/functions/get-firebase-config');
+                 if (!response.ok) {
+                    throw new Error('Failed to fetch Firebase config');
+                }
+                const firebaseConfig = await response.json();
 
+                if (firebaseConfig.apiKey) {
+                    firebase.initializeApp(firebaseConfig);
+                    setupPageListeners(); // Run the rest of the page's code
+                } else {
+                    loadingSpinner.classList.add('hidden');
+                    firebaseErrorMessage.classList.remove('hidden');
+                    console.warn("Firebase config is not set. Real-time features will be disabled.");
+                }
+            } catch (error) {
+                console.error("Could not initialize Firebase:", error);
+                loadingSpinner.classList.add('hidden');
+                firebaseErrorMessage.classList.remove('hidden');
+            }
+        }
+
+        function setupPageListeners() {
             const requestsContainer = document.getElementById('requests-container');
             const loadingSpinner = document.getElementById('loading-spinner');
             const noRequestsMessage = document.getElementById('no-requests');
@@ -180,7 +193,7 @@
             let currentImages = [];
             let currentImageIndex = 0;
             
-            let db;
+            let db = firebase.firestore();
             let unsubscribe;
 
             const openModal = (modalEl) => {
@@ -192,22 +205,6 @@
                 modalEl.classList.remove('active');
                 setTimeout(() => modalEl.classList.add('hidden'), 300);
             };
-
-            if (firebaseConfig.apiKey === "YOUR_API_KEY" || typeof firebase === 'undefined') {
-                loadingSpinner.classList.add('hidden');
-                firebaseErrorMessage.classList.remove('hidden');
-                return;
-            }
-
-            try {
-                firebase.initializeApp(firebaseConfig);
-                db = firebase.firestore();
-                listenForRequests();
-            } catch (error) {
-                console.error("Firebase initialization failed:", error);
-                loadingSpinner.classList.add('hidden');
-                firebaseErrorMessage.classList.remove('hidden');
-            }
 
             function listenForRequests() {
                 if (unsubscribe) {
@@ -416,8 +413,12 @@
                 currentImageIndex = (currentImageIndex + 1) % currentImages.length;
                 showImageInViewer();
             });
+            
+            listenForRequests();
+        }
 
-        });
+        document.addEventListener('DOMContentLoaded', initializeApp);
     </script>
 </body>
 </html>
+

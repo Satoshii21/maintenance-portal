@@ -9,3 +9,4 @@
   # Specifies the version of Node.js to use for running the functions.
   # Using a recent, stable version is recommended.
   node_bundler = "esbuild"
+

@@ -107,81 +107,53 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- Page Load Animation ---
-            const animatedElements = document.querySelectorAll('.fade-in-up');
-            animatedElements.forEach(el => {
-                setTimeout(() => el.classList.add('visible'), 10);
-            });
-            
-            // --- Firebase and PM Schedule Logic ---
-             const firebaseConfig = {
-              apiKey: "AIzaSyAPBdGRepb9XLyysEoKDFqFOOeKaSLe0Dw",
-              authDomain: "mmf-maintenance-portal.firebaseapp.com",
-              projectId: "mmf-maintenance-portal",
-              storageBucket: "mmf-maintenance-portal.firebasestorage.app",
-              messagingSenderId: "238077064193",
-              appId: "1:238077064193:web:b9c3784590693ba8e3fc00",
-              measurementId: "G-MBLLE9N93W"
-            };
-
-            let db;
-            let pmUnsubscribe;
-            
-            const pmTracker = document.getElementById('pm-tracker');
-            const pmLoadingSpinner = document.getElementById('pm-loading-spinner');
+        // This function now runs first to securely fetch the Firebase keys.
+        async function initializeApp() {
+            try {
+                const response = await fetch('/.netlify/functions/get-firebase-config');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch Firebase config');
+                }
+                const firebaseConfig = await response.json();
+                
+                if (firebaseConfig.apiKey) {
+                    firebase.initializeApp(firebaseConfig);
+                    setupPageListeners(); // Run the rest of the page's code
+                } else {
+                    console.warn("Firebase config is not set. Real-time features will be disabled.");
+                }
+            } catch (error) {
+                console.error("Could not initialize Firebase:", error);
+            }
+        }
+        
+        function setupPageListeners() {
+            // --- PM Schedule Logic ---
             const pmDueContainer = document.querySelector('#pm-due ul');
             const pmDueSoonContainer = document.querySelector('#pm-due-soon ul');
             const pmUpcomingContainer = document.querySelector('#pm-upcoming ul');
+            let db = firebase.firestore();
             
-            if (firebaseConfig.apiKey !== "YOUR_API_KEY" && typeof firebase !== 'undefined') {
-                try {
-                    firebase.initializeApp(firebaseConfig);
-                    db = firebase.firestore();
-                    seedInitialDataAndListen();
-                } catch (e) { console.error("Firebase initialization failed:", e); }
-            } else {
-                console.warn("Firebase config is not set. Real-time features will be disabled.");
-                pmLoadingSpinner.classList.add('hidden');
-            }
-
-            async function seedInitialDataAndListen() {
-                const pmCollectionRef = db.collection('pmSchedule');
-                const snapshot = await pmCollectionRef.limit(1).get();
-
-                if (snapshot.empty) {
-                    console.log("PM Schedule is empty. Seeding initial data...");
-                    const initialSchedule = [
-                        { name: 'Weekly Line & Area Inspection', frequency: 'weekly', lastCompleted: '2025-10-17' },
-                        { name: 'Quarterly Line-Area Check', frequency: 'quarterly', lastCompleted: '2025-10-01' },
-                        { name: 'Monthly Forklift Inspection', frequency: 'monthly', lastCompleted: '2025-09-25' },
-                        { name: 'Annual Fire Extinguisher Service', frequency: 'yearly', lastCompleted: '2025-01-15' }
-                    ];
-                    const batch = db.batch();
-                    initialSchedule.forEach(task => {
-                        const docRef = pmCollectionRef.doc(); // Automatically generate ID
-                        batch.set(docRef, task);
-                    });
-                    await batch.commit();
-                }
-                listenForPMSchedule();
-            }
-
             function listenForPMSchedule() {
-                if (pmUnsubscribe) pmUnsubscribe();
-
-                pmUnsubscribe = db.collection('pmSchedule').onSnapshot(snapshot => {
-                    pmLoadingSpinner.classList.add('hidden');
-                    pmTracker.classList.remove('hidden');
-
-                    const schedule = [];
-                    snapshot.forEach(doc => {
-                        schedule.push({ id: doc.id, ...doc.data() });
-                    });
-                    renderPMSchedule(schedule);
-                }, err => {
-                    console.error("Error fetching PM schedule: ", err);
-                    pmLoadingSpinner.classList.add('hidden');
+                db.collection('pmSchedule').onSnapshot(snapshot => {
+                    if (snapshot.empty) {
+                        // Seed data if collection doesn't exist
+                        const initialSchedule = [
+                            { name: 'Weekly Line & Area Inspection', frequency: 'weekly', lastCompleted: '2025-10-17' },
+                            { name: 'Quarterly Line-Area Check', frequency: 'quarterly', lastCompleted: '2025-10-01' },
+                            { name: 'Monthly Forklift Inspection', frequency: 'monthly', lastCompleted: '2025-09-25' },
+                            { name: 'Annual Fire Extinguisher Service', frequency: 'yearly', lastCompleted: '2025-01-15' }
+                        ];
+                        const batch = db.batch();
+                        initialSchedule.forEach(task => {
+                            const docRef = db.collection('pmSchedule').doc();
+                            batch.set(docRef, task);
+                        });
+                        batch.commit();
+                    } else {
+                        const pmSchedule = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        renderPMSchedule(pmSchedule);
+                    }
                 });
             }
 
@@ -190,15 +162,13 @@
                 today.setHours(0, 0, 0, 0);
 
                 const scheduleWithDueDates = pmSchedule.map(task => {
-                    // Firestore timestamps might be objects, handle both strings and objects
-                    const lastCompletedDate = task.lastCompleted.seconds ? new Date(task.lastCompleted.seconds * 1000) : new Date(task.lastCompleted + 'T00:00:00');
-                    let nextDueDate = new Date(lastCompletedDate);
-                    
+                    const lastCompleted = new Date(task.lastCompleted + 'T00:00:00');
+                    let nextDueDate = new Date(lastCompleted);
                     switch (task.frequency) {
-                        case 'weekly': nextDueDate.setDate(lastCompletedDate.getDate() + 7); break;
-                        case 'monthly': nextDueDate.setMonth(lastCompletedDate.getMonth() + 1); break;
-                        case 'quarterly': nextDueDate.setMonth(lastCompletedDate.getMonth() + 3); break;
-                        case 'yearly': nextDueDate.setFullYear(lastCompletedDate.getFullYear() + 1); break;
+                        case 'weekly': nextDueDate.setDate(lastCompleted.getDate() + 7); break;
+                        case 'monthly': nextDueDate.setMonth(lastCompleted.getMonth() + 1); break;
+                        case 'quarterly': nextDueDate.setMonth(lastCompleted.getMonth() + 3); break;
+                        case 'yearly': nextDueDate.setFullYear(lastCompleted.getFullYear() + 1); break;
                     }
                     nextDueDate.setHours(0,0,0,0);
                     return { ...task, nextDueDate };
@@ -218,22 +188,18 @@
                 [dueTasks, dueSoonTasks, upcomingTasks].forEach(arr => arr.sort(sortByDueDate));
                 
                 const renderTasks = (container, tasks, colorClass, showCompleteBtn) => {
-                    container.innerHTML = ''; // Clear previous entries
                     if (tasks.length === 0) {
                         container.innerHTML = `<li><p class="text-gray-500 italic">None</p></li>`;
                         return;
                     }
-                    tasks.forEach(task => {
+                    container.innerHTML = tasks.map(task => {
                         const dueDateString = task.nextDueDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
                         let dayString = (task.diffDays <= 0) ? `<span class="font-bold text-red-600">${Math.abs(task.diffDays)} days overdue</span>` : `in ${task.diffDays} days`;
 
                         const completeBtnHtml = showCompleteBtn ? `<button class="complete-btn ml-4 text-green-600 hover:text-green-800" data-task-id="${task.id}" data-due-date="${task.nextDueDate.toISOString().split('T')[0]}" title="Mark as Completed"><svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg></button>` : '';
 
-                        const li = document.createElement('li');
-                        li.className = 'flex justify-between items-center';
-                        li.innerHTML = `<div class="flex-grow"><span class="font-medium text-gray-700">${task.name}</span><span class="text-xs font-semibold ${colorClass} px-2 py-0.5 rounded-full ml-2">${dueDateString} (${dayString})</span></div> ${completeBtnHtml}`;
-                        container.appendChild(li);
-                    });
+                        return `<li class="flex justify-between items-center"><div class="flex-grow"><span class="font-medium text-gray-700">${task.name}</span><span class="text-xs font-semibold ${colorClass} px-2 py-0.5 rounded-full ml-2">${dueDateString} (${dayString})</span></div> ${completeBtnHtml}</li>`;
+                    }).join('');
                 };
 
                 renderTasks(pmDueContainer, dueTasks, 'bg-red-200 text-red-800', true);
@@ -241,19 +207,27 @@
                 renderTasks(pmUpcomingContainer, upcomingTasks, 'bg-green-200 text-green-800', false);
             }
 
-            pmTracker.addEventListener('click', (e) => {
+            document.getElementById('pm-tracker').addEventListener('click', (e) => {
                 const completeBtn = e.target.closest('.complete-btn');
                 if (completeBtn) {
                     const taskId = completeBtn.dataset.taskId;
                     const dueDate = completeBtn.dataset.dueDate;
-                    if (taskId && dueDate) {
-                        db.collection('pmSchedule').doc(taskId).update({
-                            lastCompleted: dueDate
-                        }).catch(err => console.error("Error completing task: ", err));
-                    }
+                    db.collection('pmSchedule').doc(taskId).update({ lastCompleted: dueDate });
                 }
             });
+
+            listenForPMSchedule();
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Page Load Animation ---
+            const animatedElements = document.querySelectorAll('.fade-in-up');
+            animatedElements.forEach(el => {
+                setTimeout(() => el.classList.add('visible'), 10);
+            });
+            initializeApp();
         });
     </script>
 </body>
 </html>
+
