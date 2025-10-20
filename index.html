@@ -16,6 +16,23 @@
             font-family: 'Inter', sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
         }
         
+        /* --- Loading Spinner (New) --- */
+        #page-loader {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(5px);
+            transition: opacity 0.5s ease;
+        }
+        #page-loader.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
         /* --- Seamless Animation Styles --- */
         #animation-container {
             position: fixed;
@@ -26,7 +43,12 @@
             justify-content: center;
             z-index: 100;
             transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0; /* Start hidden */
         }
+        body.loaded #animation-container {
+            opacity: 1; /* Fade in when ready */
+        }
+
         #animated-logo {
             width: 256px; /* Starts large (w-64) */
             margin-bottom: 1rem; /* Starts with margin (mb-4) */
@@ -100,6 +122,11 @@
 <body class="bg-gray-900 text-white font-sans flex items-center justify-center h-screen p-4 overflow-hidden">
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js"></script>
+    
+    <!-- Page Loader (New) -->
+    <div id="page-loader">
+        <svg class="animate-spin h-10 w-10 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+    </div>
 
     <div id="animation-container">
         <img id="animated-logo" src="/images/mmf-logo.png" alt="MMF Logo" class="h-auto">
@@ -222,31 +249,48 @@
 
 
     <script>
+        let firebaseInitializationPromise = null;
         async function initializeFirebase() {
-            try {
-                const response = await fetch('/.netlify/functions/get-firebase-config');
-                if (!response.ok) throw new Error('Failed to fetch Firebase config');
-                
-                const firebaseConfig = await response.json();
-                
-                if (firebaseConfig.apiKey) {
-                    if (firebase.apps.length === 0) {
-                        firebase.initializeApp(firebaseConfig);
+            if (firebaseInitializationPromise) return firebaseInitializationPromise;
+
+            firebaseInitializationPromise = new Promise(async (resolve) => {
+                try {
+                    const response = await fetch('/.netlify/functions/get-firebase-config');
+                    if (!response.ok) throw new Error('Failed to fetch Firebase config');
+                    
+                    const firebaseConfig = await response.json();
+                    
+                    if (firebaseConfig.apiKey) {
+                        if (firebase.apps.length === 0) {
+                            firebase.initializeApp(firebaseConfig);
+                        }
+                        console.log("Firebase initialized successfully.");
+                        resolve(true);
+                    } else {
+                        resolve(false);
                     }
-                    return true;
+                } catch (error) {
+                    console.error("Could not initialize Firebase:", error);
+                    resolve(false);
                 }
-                return false;
-            } catch (error) {
-                console.error("Could not initialize Firebase:", error);
-                return false;
-            }
+            });
+            return firebaseInitializationPromise;
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- Animation Logic (Runs Immediately) ---
-            const splashText = document.getElementById('splash-text');
-            const body = document.body;
 
+        document.addEventListener('DOMContentLoaded', async () => {
+            const pageLoader = document.getElementById('page-loader');
+            const body = document.body;
+            
+            // ** PERFORMANCE FIX: Pre-warm and wait for the connection **
+            await initializeFirebase();
+            
+            // Hide loader and show content
+            pageLoader.classList.add('hidden');
+            body.classList.add('loaded');
+
+            // --- Animation Logic ---
+            const splashText = document.getElementById('splash-text');
             setTimeout(() => {
                 splashText.style.opacity = '0';
                 setTimeout(() => {
@@ -255,8 +299,6 @@
             }, 1500);
 
             // --- Modal and Form Logic ---
-            let isFirebaseInitialized = false;
-
             const portalTab = document.getElementById('portalTab');
             const passwordModal = document.getElementById('passwordModal');
             const submitPassword = document.getElementById('submitPassword');
@@ -310,14 +352,8 @@
             passwordInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') submitPassword.click(); });
             showPasswordCheckbox.addEventListener('change', () => { passwordInput.type = showPasswordCheckbox.checked ? 'text' : 'password'; });
 
-            // ** PERFORMANCE FIX: Initialize Firebase only when needed **
-            requestTab.addEventListener('click', async () => {
-                openModal(requestModal);
-                if (!isFirebaseInitialized) {
-                    console.log("Initializing Firebase for request form...");
-                    isFirebaseInitialized = await initializeFirebase();
-                }
-            });
+            requestTab.addEventListener('click', () => openModal(requestModal));
+            
             cancelRequest.addEventListener('click', () => closeModal(requestModal));
             closeRequestModal.addEventListener('click', () => closeModal(requestModal));
             closeThankYou.addEventListener('click', () => closeModal(thankYouModal));
@@ -355,11 +391,13 @@
                 uploadedFiles = [];
             };
 
-            const handleFormSubmit = (event) => {
+            const handleFormSubmit = async (event) => {
                 event.preventDefault();
                 if (!issueDescription.value.trim()) { alert("Please describe the issue."); return; }
                 const formData = new FormData(maintenanceForm);
                 
+                const isFirebaseInitialized = await initializeFirebase();
+
                 const saveRequestToFirestore = () => {
                     if (!isFirebaseInitialized) {
                         console.warn("Firestore submission skipped: Firebase not initialized."); return;
