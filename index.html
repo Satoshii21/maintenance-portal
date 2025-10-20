@@ -6,7 +6,13 @@
     <title>MMF Maintenance</title>
     <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- PERFORMANCE FIX: Asynchronously load Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+
     <style>
         body {
             background-image: linear-gradient(to bottom, rgba(17, 24, 39, 0.5), rgba(17, 24, 39, 0.2)), url('/images/background.jpg');
@@ -98,8 +104,6 @@
     </style>
 </head>
 <body class="bg-gray-900 text-white font-sans flex items-center justify-center h-screen p-4 overflow-hidden">
-    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js"></script>
     
     <div id="animation-container">
         <img id="animated-logo" src="/images/mmf-logo.png" alt="MMF Logo" class="h-auto">
@@ -219,6 +223,9 @@
         <input type="file" name="photos" />
     </form>
 
+    <!-- PERFORMANCE FIX: Defer Firebase scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js" defer></script>
 
     <script>
         // ** FINAL PERFORMANCE FIX **
