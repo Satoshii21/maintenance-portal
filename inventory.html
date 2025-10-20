@@ -5,10 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Maintenance Inventory</title>
     <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- PERFORMANCE FIX: Asynchronously load Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+
     <style>
+        /* PERFORMANCE FIX: Prevent Flash of Unstyled Content (FOUC) */
         body {
+            visibility: hidden;
             font-family: 'Inter', sans-serif;
             background-color: #f4f7f6;
         }
@@ -151,8 +158,7 @@
         <header class="bg-white shadow-lg rounded-xl p-6 pt-16 sm:p-6 mb-6 text-center relative">
              <a href="dashboard.html" class="absolute top-4 left-4 sm:top-6 sm:left-6 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-300 transition duration-300 flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-                </svg>
+                  <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
                 <span>Dashboard</span>
             </a>
             <div class="absolute top-4 right-4 sm:top-6 sm:right-6 flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
@@ -273,8 +279,10 @@
         </div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js"></script>
+    <!-- PERFORMANCE FIX: Scripts moved to the end of the body -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js" defer></script>
     <script>
         async function initializeApp() {
             try {
@@ -285,8 +293,16 @@
                 const firebaseConfig = await response.json();
 
                 if (firebaseConfig.apiKey) {
-                    firebase.initializeApp(firebaseConfig);
-                    setupPageListeners(); // Run the rest of the page's code
+                    // Poll until Firebase is loaded from the deferred script
+                    const interval = setInterval(() => {
+                        if (typeof firebase !== 'undefined') {
+                            clearInterval(interval);
+                            if (firebase.apps.length === 0) {
+                                firebase.initializeApp(firebaseConfig);
+                            }
+                            setupPageListeners();
+                        }
+                    }, 100);
                 } else {
                     console.warn("Firebase config is not set. Real-time features will be disabled.");
                 }
@@ -408,8 +424,6 @@
                 });
             };
             
-            // ... (rest of your original JavaScript for this page) ...
-            // No changes were made to the functions below, they remain the same.
             const createAlertTag = (item) => {
                 const tag = document.createElement('div');
                 tag.className = 'flex items-center bg-white border rounded-full py-1 pl-3 pr-1 m-1 text-sm';
@@ -609,7 +623,10 @@
             listenForInventoryChanges();
         }
 
-        document.addEventListener('DOMContentLoaded', initializeApp);
+        document.addEventListener('DOMContentLoaded', () => {
+            document.body.style.visibility = 'visible';
+            initializeApp();
+        });
     </script>
 </body>
 </html>

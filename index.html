@@ -6,14 +6,16 @@
     <title>MMF Maintenance</title>
     <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
     
-    <!-- PERFORMANCE FIX: Asynchronously load Google Fonts -->
+    <!-- Asynchronously load Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
 
     <style>
-        body {
+        /* FINAL PERFORMANCE FIX: Prevent Flash of Unstyled Content (FOUC) */
+        body { 
+            visibility: hidden; 
             background-image: linear-gradient(to bottom, rgba(17, 24, 39, 0.5), rgba(17, 24, 39, 0.2)), url('/images/background.jpg');
             background-size: cover;
             background-position: center;
@@ -23,6 +25,7 @@
         
         /* --- Seamless Animation Styles --- */
         #animation-container {
+            visibility: hidden; /* FINAL FOUC FIX: Hide until ready */
             position: fixed;
             inset: 0;
             display: flex;
@@ -31,6 +34,9 @@
             justify-content: center;
             z-index: 100;
             transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        body.styles-loaded #animation-container {
+            visibility: visible; /* Show when styles are loaded */
         }
         #animated-logo {
             width: 256px; /* Starts large (w-64) */
@@ -223,7 +229,7 @@
     </form>
     
     <!-- FINAL PERFORMANCE FIX: All scripts moved to the end of the body -->
-    <script src="https://cdn.tailwindcss.com" defer></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js" defer></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js" defer></script>
 
@@ -273,6 +279,11 @@
 
 
         document.addEventListener('DOMContentLoaded', () => {
+            // FINAL PERFORMANCE FIX: Make body visible to prevent FOUC
+            document.body.style.visibility = 'visible';
+            // Also make the main container visible after styles are likely applied
+            document.getElementById('animation-container').style.visibility = 'visible';
+
             // --- This section now runs instantly ---
             
             // 1. Kick off the slow server connection in the background.
@@ -358,7 +369,7 @@
                         const previewWrapper = document.createElement('div');
                         previewWrapper.className = 'relative';
                         previewWrapper.innerHTML = `<img src="${e.target.result}" class="h-24 w-full object-cover rounded-md"><button data-index="${index}" class="remove-img-btn absolute top-0 right-0 bg-red-600 text-white rounded-full h-6 w-6 flex items-center justify-center text-xs">&times;</button>`;
-                        imagePreviewContainer.appendChild(previewWrapper);
+                        imagePreviewContainer.appendChild(wrapper);
                     };
                     reader.readAsDataURL(file);
                 });

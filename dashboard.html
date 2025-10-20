@@ -5,10 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Maintenance Dashboard</title>
     <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- PERFORMANCE FIX: Asynchronously load Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+
     <style>
+        /* PERFORMANCE FIX: Prevent Flash of Unstyled Content (FOUC) */
         body {
+            visibility: hidden;
             background-image: linear-gradient(to bottom, rgba(17, 24, 39, 0.6), rgba(17, 24, 39, 0.3)), url('/images/dashboard.jpg');
             background-size: cover;
             background-position: center;
@@ -110,8 +117,10 @@
         </main>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js"></script>
+    <!-- PERFORMANCE FIX: Scripts moved to the end of the body -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js" defer></script>
     <script>
         async function initializeApp() {
             try {
@@ -122,10 +131,16 @@
                 const firebaseConfig = await response.json();
                 
                 if (firebaseConfig.apiKey) {
-                    if (firebase.apps.length === 0) {
-                        firebase.initializeApp(firebaseConfig);
-                    }
-                    setupPageListeners(); 
+                    // Poll until Firebase is loaded from the deferred script
+                    const interval = setInterval(() => {
+                        if (typeof firebase !== 'undefined') {
+                            clearInterval(interval);
+                            if (firebase.apps.length === 0) {
+                                firebase.initializeApp(firebaseConfig);
+                            }
+                            setupPageListeners();
+                        }
+                    }, 100);
                 } else {
                     console.warn("Firebase config is not set. Real-time features will be disabled.");
                 }
@@ -241,6 +256,7 @@
         }
         
         document.addEventListener('DOMContentLoaded', () => {
+            document.body.style.visibility = 'visible';
             // --- Page Load Animation ---
             const animatedElements = document.querySelectorAll('.fade-in-up');
             animatedElements.forEach(el => {
