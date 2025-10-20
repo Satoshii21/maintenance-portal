@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MMF Maintenance</title>
     <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
-    <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- PERFORMANCE FIX: Asynchronously load Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -222,13 +221,13 @@
         <input type="checkbox" name="urgent" value="true" />
         <input type="file" name="photos" />
     </form>
-
-    <!-- PERFORMANCE FIX: Defer Firebase scripts -->
+    
+    <!-- FINAL PERFORMANCE FIX: All scripts moved to the end of the body -->
+    <script src="https://cdn.tailwindcss.com" defer></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js" defer></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js" defer></script>
 
     <script>
-        // ** FINAL PERFORMANCE FIX **
         let firebaseInitializationPromise = null;
         async function initializeFirebase() {
             if (firebaseInitializationPromise) return firebaseInitializationPromise;
@@ -241,11 +240,26 @@
                     const firebaseConfig = await response.json();
                     
                     if (firebaseConfig.apiKey) {
-                        if (firebase.apps.length === 0) {
-                            firebase.initializeApp(firebaseConfig);
+                        // Ensure Firebase is ready before initializing
+                        if (typeof firebase !== 'undefined') {
+                             if (firebase.apps.length === 0) {
+                                firebase.initializeApp(firebaseConfig);
+                            }
+                            console.log("Firebase initialized successfully.");
+                            resolve(true);
+                        } else {
+                            // Poll until Firebase is loaded from the deferred script
+                            const interval = setInterval(() => {
+                                if (typeof firebase !== 'undefined') {
+                                    clearInterval(interval);
+                                    if (firebase.apps.length === 0) {
+                                        firebase.initializeApp(firebaseConfig);
+                                    }
+                                    console.log("Firebase initialized successfully after defer.");
+                                    resolve(true);
+                                }
+                            }, 100);
                         }
-                        console.log("Firebase initialized successfully.");
-                        resolve(true);
                     } else {
                         resolve(false);
                     }
@@ -259,7 +273,7 @@
 
 
         document.addEventListener('DOMContentLoaded', () => {
-            // --- This section now runs instantly, without waiting for the server ---
+            // --- This section now runs instantly ---
             
             // 1. Kick off the slow server connection in the background.
             initializeFirebase(); 
@@ -372,7 +386,6 @@
                 if (!issueDescription.value.trim()) { alert("Please describe the issue."); return; }
                 const formData = new FormData(maintenanceForm);
                 
-                // This will now wait for the background process to finish if it hasn't already.
                 const isFirebaseInitialized = await firebaseInitializationPromise;
 
                 const saveRequestToFirestore = () => {
