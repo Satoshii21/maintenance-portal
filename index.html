@@ -98,21 +98,6 @@
     </style>
 </head>
 <body class="bg-gray-900 text-white font-sans flex items-center justify-center h-screen p-4 overflow-hidden">
-    
-    <!-- Netlify Bot-Only Form -->
-    <!-- This is a hidden version of the form for Netlify to detect during deployment. -->
-    <form name="maintenance-request" data-netlify="true" netlify-honeypot="bot-field" hidden>
-        <input type="hidden" name="form-name" value="maintenance-request" />
-        <p class="hidden">
-            <label>Don’t fill this out if you’re human: <input name="bot-field" /></label>
-        </p>
-        <input type="checkbox" name="area" />
-        <textarea name="description"></textarea>
-        <input type="checkbox" name="urgent" />
-        <input type="file" name="photos" />
-    </form>
-    <!-- End of Netlify Bot-Only Form -->
-
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js"></script>
 
@@ -213,35 +198,67 @@
             <button id="closeThankYou" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg w-full transition duration-300">OK</button>
         </div>
     </div>
+    
+    <!-- Netlify Bot-Only Form -->
+    <!-- This is a hidden version of the form for Netlify to detect during deployment. -->
+    <form name="maintenance-request" data-netlify="true" netlify-honeypot="bot-field" hidden>
+        <input type="hidden" name="form-name" value="maintenance-request" />
+        <p class="hidden">
+          <label>
+            Don’t fill this out if you’re human: <input name="bot-field" />
+          </label>
+        </p>
+        <input type="checkbox" name="area" value="Auto 1" />
+        <input type="checkbox" name="area" value="Auto 3" />
+        <input type="checkbox" name="area" value="SQD" />
+        <input type="checkbox" name="area" value="Barrel Line" />
+        <input type="checkbox" name="area" value="Waste Treatment" />
+        <input type="checkbox" name="area" value="Flake Line" />
+        <input type="checkbox" name="area" value="Other" />
+        <textarea name="description"></textarea>
+        <input type="checkbox" name="urgent" value="true" />
+        <input type="file" name="photos" />
+    </form>
+
 
     <script>
-        // This function now runs first to securely fetch the Firebase keys.
-        async function initializeApp() {
+        async function initializeFirebase() {
             try {
                 const response = await fetch('/.netlify/functions/get-firebase-config');
-                if (!response.ok) {
-                    throw new Error('Failed to fetch Firebase config');
-                }
+                if (!response.ok) throw new Error('Failed to fetch Firebase config');
+                
                 const firebaseConfig = await response.json();
                 
                 if (firebaseConfig.apiKey) {
-                    firebase.initializeApp(firebaseConfig);
-                    setupPageListeners(); // Run the rest of the page's code
-                } else {
-                    console.warn("Firebase config is not set. Real-time features will be disabled.");
+                    if (firebase.apps.length === 0) {
+                        firebase.initializeApp(firebaseConfig);
+                    }
+                    return true;
                 }
+                return false;
             } catch (error) {
                 console.error("Could not initialize Firebase:", error);
+                return false;
             }
         }
 
-        // All of the original page logic is now inside this function.
-        function setupPageListeners() {
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Animation Logic (Runs Immediately) ---
+            const splashText = document.getElementById('splash-text');
+            const body = document.body;
+
+            setTimeout(() => {
+                splashText.style.opacity = '0';
+                setTimeout(() => {
+                    body.classList.add('animation-end');
+                }, 500); 
+            }, 1500);
+
+            // --- Modal and Form Logic ---
+            let isFirebaseInitialized = false;
+
             const portalTab = document.getElementById('portalTab');
             const passwordModal = document.getElementById('passwordModal');
-            // ... (rest of your original JavaScript for this page) ...
-            // The following is a truncated version of your original code.
-            // No changes were made inside this function, only moving it.
             const submitPassword = document.getElementById('submitPassword');
             const passwordInput = document.getElementById('passwordInput');
             const showPasswordCheckbox = document.getElementById('showPasswordCheckbox');
@@ -293,7 +310,14 @@
             passwordInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') submitPassword.click(); });
             showPasswordCheckbox.addEventListener('change', () => { passwordInput.type = showPasswordCheckbox.checked ? 'text' : 'password'; });
 
-            requestTab.addEventListener('click', () => openModal(requestModal));
+            // ** PERFORMANCE FIX: Initialize Firebase only when needed **
+            requestTab.addEventListener('click', async () => {
+                openModal(requestModal);
+                if (!isFirebaseInitialized) {
+                    console.log("Initializing Firebase for request form...");
+                    isFirebaseInitialized = await initializeFirebase();
+                }
+            });
             cancelRequest.addEventListener('click', () => closeModal(requestModal));
             closeRequestModal.addEventListener('click', () => closeModal(requestModal));
             closeThankYou.addEventListener('click', () => closeModal(thankYouModal));
@@ -337,6 +361,9 @@
                 const formData = new FormData(maintenanceForm);
                 
                 const saveRequestToFirestore = () => {
+                    if (!isFirebaseInitialized) {
+                        console.warn("Firestore submission skipped: Firebase not initialized."); return;
+                    }
                     const db = firebase.firestore();
                     const readerPromises = uploadedFiles.map(file => new Promise(resolve => {
                         const reader = new FileReader();
@@ -359,7 +386,7 @@
                     });
                 };
 
-                 fetch("/", {
+                fetch("/", {
                     method: "POST",
                     body: formData,
                 })
@@ -372,22 +399,6 @@
                 resetForm();
             };
             maintenanceForm.addEventListener('submit', handleFormSubmit);
-        }
-
-        // This line starts everything when the page is ready.
-        document.addEventListener('DOMContentLoaded', () => {
-             // --- Animation Logic ---
-            const splashText = document.getElementById('splash-text');
-            const body = document.body;
-
-            setTimeout(() => {
-                splashText.style.opacity = '0';
-                setTimeout(() => {
-                    body.classList.add('animation-end');
-                }, 500); 
-            }, 1500);
-
-            initializeApp(); // This now starts the secure fetch process.
         });
     </script>
 </body>
